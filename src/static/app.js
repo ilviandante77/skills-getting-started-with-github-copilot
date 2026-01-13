@@ -28,13 +28,37 @@ document.addEventListener("DOMContentLoaded", () => {
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
           <div class="participants-section">
             <strong>Participants:</strong>
-            <ul class="participants-list">
+            <div class="participants-list" style="list-style-type:none; padding-left:0;">
               ${details.participants.length > 0
-                ? details.participants.map(email => `<li>${email}</li>`).join("")
-                : '<li class="no-participants">No participants yet.</li>'}
-            </ul>
+                ? details.participants.map(email => `
+                  <div class="participant-row">
+                    <span class="participant-name">${email}</span>
+                    <span class="delete-icon" title="Rimuovi" style="cursor:pointer; margin-left:8px; color:#c00;" data-activity="${name}" data-email="${email}">&#128465;</span>
+                  </div>
+                `).join("")
+                : '<span class="no-participants">No participants yet.</span>'}
+            </div>
           </div>
         `;
+
+        // Aggiungi event listener alle icone delete
+        setTimeout(() => {
+          activityCard.querySelectorAll('.delete-icon').forEach(icon => {
+            icon.addEventListener('click', async (e) => {
+              const activity = icon.getAttribute('data-activity');
+              const email = icon.getAttribute('data-email');
+              const res = await fetch(`/activities/${encodeURIComponent(activity)}/unregister?email=${encodeURIComponent(email)}`, {
+                method: 'POST'
+              });
+              const result = await res.json();
+              if (res.ok) {
+                fetchActivities();
+              } else {
+                alert(result.detail || 'Errore nella rimozione del partecipante');
+              }
+            });
+          });
+        }, 0);
 
         activitiesList.appendChild(activityCard);
 
