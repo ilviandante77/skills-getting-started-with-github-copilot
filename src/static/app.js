@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Clear loading message
       activitiesList.innerHTML = "";
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -25,7 +26,43 @@ document.addEventListener("DOMContentLoaded", () => {
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <div class="participants-section">
+            <strong>Participants:</strong>
+            <div class="participants-list" style="list-style-type:none; padding-left:0;">
+              ${details.participants.length > 0
+                ? details.participants.map(email => `
+                  <div class="participant-row">
+                    <span class="participant-name">${email}</span>
+                    <span class="delete-icon" title="Rimuovi" data-activity="${name}" data-email="${email}">&#128465;</span>
+                  </div>
+                `).join("")
+                : '<span class="no-participants">No participants yet.</span>'}
+            </div>
+          </div>
         `;
+
+        // Aggiungi event listener alle icone delete
+        setTimeout(() => {
+          activityCard.querySelectorAll('.delete-icon').forEach(icon => {
+            icon.addEventListener('click', async (e) => {
+              const activity = icon.getAttribute('data-activity');
+              const email = icon.getAttribute('data-email');
+              const res = await fetch(`/activities/${encodeURIComponent(activity)}/unregister`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email })
+              });
+              const result = await res.json();
+              if (res.ok && result.success) {
+                fetchActivities();
+              } else {
+                alert(result.detail || 'Errore nella rimozione del partecipante');
+              }
+            });
+          });
+        }, 0);
 
         activitiesList.appendChild(activityCard);
 
@@ -62,6 +99,8 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        // Aggiorna la lista delle attività e dei partecipanti
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
