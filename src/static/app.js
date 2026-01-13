@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? details.participants.map(email => `
                   <div class="participant-row">
                     <span class="participant-name">${email}</span>
-                    <span class="delete-icon" title="Rimuovi" style="cursor:pointer; margin-left:8px; color:#c00;" data-activity="${name}" data-email="${email}">&#128465;</span>
+                    <span class="delete-icon" title="Rimuovi" data-activity="${name}" data-email="${email}">&#128465;</span>
                   </div>
                 `).join("")
                 : '<span class="no-participants">No participants yet.</span>'}
@@ -47,11 +47,15 @@ document.addEventListener("DOMContentLoaded", () => {
             icon.addEventListener('click', async (e) => {
               const activity = icon.getAttribute('data-activity');
               const email = icon.getAttribute('data-email');
-              const res = await fetch(`/activities/${encodeURIComponent(activity)}/unregister?email=${encodeURIComponent(email)}`, {
-                method: 'POST'
+              const res = await fetch(`/activities/${encodeURIComponent(activity)}/unregister`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email })
               });
               const result = await res.json();
-              if (res.ok) {
+              if (res.ok && result.success) {
                 fetchActivities();
               } else {
                 alert(result.detail || 'Errore nella rimozione del partecipante');
